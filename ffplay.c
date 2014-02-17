@@ -384,6 +384,7 @@ static int packet_queue_put_private(PacketQueue *q, AVPacket *pkt)
     q->size += pkt1->pkt.size + sizeof(*pkt1);
     /* XXX: should duplicate packet data in DV case */
     SDL_CondSignal(q->cond);
+
     return 0;
 }
 
@@ -422,6 +423,8 @@ static void packet_queue_init(PacketQueue *q)
     q->mutex = SDL_CreateMutex();
     q->cond = SDL_CreateCond();
     q->abort_request = 1;
+
+	/* GREG possible 1 */
 }
 
 static void packet_queue_flush(PacketQueue *q)
@@ -465,6 +468,7 @@ static void packet_queue_start(PacketQueue *q)
     q->abort_request = 0;
     packet_queue_put_private(q, &flush_pkt);
     SDL_UnlockMutex(q->mutex);
+	/* GREG possible 2 */
 }
 
 /* return < 0 if aborted, 0 if no packet and > 0 if packet.  */
@@ -3653,10 +3657,12 @@ int main(int argc, char **argv)
     flush_pkt.data = (uint8_t *)&flush_pkt;
 
     is = stream_open(input_filename, file_iformat);
+
     if (!is) {
         av_log(NULL, AV_LOG_FATAL, "Failed to initialize VideoState!\n");
         do_exit(NULL);
     }
+
 
     event_loop(is);
 
