@@ -892,17 +892,29 @@ static int update_thread_context(AVCodecContext *dst, const AVCodecContext *src)
 static av_cold int png_dec_init(AVCodecContext *avctx)
 {
     PNGDecContext *s = avctx->priv_data;
+	static int decInitialized;	/* GREG: Keep track of whether the decoder has already been opened */
 
     s->avctx = avctx;
     s->last_picture.f = av_frame_alloc();
     s->picture.f = av_frame_alloc();
+
+
     if (!s->last_picture.f || !s->picture.f)
         return AVERROR(ENOMEM);
+
 
     if (!avctx->internal->is_copy) {
         avctx->internal->allocate_progress = 1;
         ff_pngdsp_init(&s->dsp);
     }
+
+	/* GREG START */
+	if (!decInitialized) {
+		printf("*** CS 3505:  Executing in png_dec_init() in libavcodec/pngdec.c ***\n");
+		printf("*** CS 3505:  Altered by Greg Anderson and Celeste Hollenbeck ***\n");
+		decInitialized = 1;
+	}
+	/* GREG END */
 
     return 0;
 }

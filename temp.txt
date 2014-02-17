@@ -1,0 +1,20 @@
+grep -nr init_static_data > temp.txt
+
+libavcodec/utils.c:224:    if (codec->init_static_data)
+libavcodec/utils.c:225:        codec->init_static_data(codec);
+libavcodec/jpeg2000dec.c:1691:static void jpeg2000_init_static_data(AVCodec *codec)
+libavcodec/jpeg2000dec.c:1729:    .init_static_data = jpeg2000_init_static_data,
+libavcodec/libx264.c:807:    .init_static_data = X264_init_static,
+libavcodec/libstagefright.cpp:584:    NULL, //init_static_data
+libavcodec/libx265.c:279:    .init_static_data = libx265_encode_init_csp,
+libavcodec/avcodec.h:3088:    void (*init_static_data)(struct AVCodec *codec);
+libavcodec/qdm2.c:1753:static av_cold void qdm2_init_static_data(void) {
+libavcodec/qdm2.c:1778:    qdm2_init_static_data();
+libavcodec/libvpxdec.c:149:    .init_static_data = ff_vp9_init_static,
+libavcodec/libvpxenc.c:878:    .init_static_data = ff_vp9_init_static,
+libavcodec/atrac3.c:775:static av_cold void atrac3_init_static_data(void)
+libavcodec/atrac3.c:807:        atrac3_init_static_data();
+libavcodec/libutvideodec.cpp:206:    NULL, //init_static_data
+libavcodec/wmavoice.c:318:static av_cold void wmavoice_init_static_data(AVCodec *codec)
+libavcodec/wmavoice.c:2070:    .init_static_data = wmavoice_init_static_data,
+libavcodec/libutvideoenc.cpp:233:    NULL, /* init_static_data */
