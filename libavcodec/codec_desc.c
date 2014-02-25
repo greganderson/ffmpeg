@@ -1410,6 +1410,13 @@ static const AVCodecDescriptor codec_descriptors[] = {
         .long_name = NULL_IF_CONFIG_SMALL("Mirillis FIC"),
         .props     = AV_CODEC_PROP_LOSSY,
     },
+	{  /* XKCD description */
+	    .id        = AV_CODEC_ID_XKCD,
+		.type      = AVMEDIA_TYPE_VIDEO,
+		.name      = "xkcd",
+		.long_name = NULL_IF_CONFIG_SMALL("XKCD (Built for CS3505 in U of U) image"),
+		.props     = AV_CODEC_PROP_LOSSY,
+	},
 
     /* various PCM "codecs" */
     {

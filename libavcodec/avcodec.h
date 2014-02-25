@@ -286,6 +286,7 @@ enum AVCodecID {
     AV_CODEC_ID_HNM4_VIDEO,
     AV_CODEC_ID_HEVC_DEPRECATED,
     AV_CODEC_ID_FIC,
+	AV_CODEC_ID_XKCD, /* Our codec ID tag, integer value unknown */
 
     AV_CODEC_ID_BRENDER_PIX= MKBETAG('B','P','I','X'),
     AV_CODEC_ID_Y41P       = MKBETAG('Y','4','1','P'),
