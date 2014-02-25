@@ -328,11 +328,11 @@ static int bmp_decode_frame(AVCodecContext *avctx,
     return buf_size;
 }
 
-AVCodec ff_bmp_decoder = {
-    .name           = "bmp",
+AVCodec ff_xkcd_decoder = {
+    .name           = "xkcd",
     .long_name      = NULL_IF_CONFIG_SMALL("BMP (Windows and OS/2 bitmap)"),
     .type           = AVMEDIA_TYPE_VIDEO,
-    .id             = AV_CODEC_ID_BMP,
+    .id             = AV_CODEC_ID_XKCD,
     .decode         = bmp_decode_frame,
     .capabilities   = CODEC_CAP_DR1,
 };
