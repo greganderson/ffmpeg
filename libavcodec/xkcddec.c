@@ -36,7 +36,7 @@ static int bmp_decode_frame(AVCodecContext *avctx,
     int width, height;		/* Width and height of image */
     unsigned int depth;		/* Number of bits per pixel */
     BiCompression comp;
-    unsigned int ihsize;
+    unsigned int ihsize;	/* Info header size */
     int i, j, n, linesize, ret;
     uint32_t rgb[3] = {0};	/* Colors */
     uint32_t alpha = 0;		/* Transparency */

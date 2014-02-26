@@ -34,16 +34,10 @@ static const uint32_t rgb444_masks[]  = { 0x0F00, 0x00F0, 0x000F };
 static av_cold int bmp_encode_init(AVCodecContext *avctx){
     switch (avctx->pix_fmt) {
     case AV_PIX_FMT_BGRA:
-        avctx->bits_per_coded_sample = 32;
-        break;
     case AV_PIX_FMT_BGR24:
-        avctx->bits_per_coded_sample = 24;
-        break;
     case AV_PIX_FMT_RGB555:
     case AV_PIX_FMT_RGB565:
     case AV_PIX_FMT_RGB444:
-        avctx->bits_per_coded_sample = 16;
-        break;
     case AV_PIX_FMT_RGB8:
     case AV_PIX_FMT_BGR8:
     case AV_PIX_FMT_RGB4_BYTE:
@@ -70,27 +64,28 @@ static av_cold int bmp_encode_init(AVCodecContext *avctx){
 static int bmp_encode_frame(AVCodecContext *avctx, AVPacket *pkt,
                             const AVFrame *pict, int *got_packet)
 {
-    const AVFrame * const p = pict;
+    const AVFrame * const p = pict;	/* Actual image data */
+
+	/* hsize = header size */
     int n_bytes_image, n_bytes_per_row, n_bytes, i, n, hsize, ret;
-    const uint32_t *pal = NULL;
+
+    const uint32_t *pal = NULL;	/* pallete entries */
     uint32_t palette256[256];
+
+	/* pad_bytes_per_row = bytes of null to fill in at the end of a row of image data */
     int pad_bytes_per_row, pal_entries = 0, compression = XKCD_RGB;
+
+	/* Number of bits per pixel */
     int bit_count = avctx->bits_per_coded_sample;
+
+	/* ptr = data to be buffered, buf = buffer to write to */
     uint8_t *ptr, *buf;
 
     avctx->coded_frame->pict_type = AV_PICTURE_TYPE_I;
     avctx->coded_frame->key_frame = 1;
     switch (avctx->pix_fmt) {
     case AV_PIX_FMT_RGB444:
-        compression = XKCD_BITFIELDS;
-        pal = rgb444_masks; // abuse pal to hold color masks
-        pal_entries = 3;
-        break;
     case AV_PIX_FMT_RGB565:
-        compression = XKCD_BITFIELDS;
-        pal = rgb565_masks; // abuse pal to hold color masks
-        pal_entries = 3;
-        break;
     case AV_PIX_FMT_RGB8:
     case AV_PIX_FMT_BGR8:
     case AV_PIX_FMT_RGB4_BYTE:
@@ -101,22 +96,25 @@ static int bmp_encode_frame(AVCodecContext *avctx, AVPacket *pkt,
         pal = palette256;
         break;
     case AV_PIX_FMT_PAL8:
-        pal = (uint32_t *)p->data[1];
-        break;
     case AV_PIX_FMT_MONOBLACK:
         pal = monoblack_pal;
         break;
     }
     if (pal && !pal_entries) pal_entries = 1 << bit_count;
+
+	/* Number of bytes of image data in a row */
     n_bytes_per_row = ((int64_t)avctx->width * (int64_t)bit_count + 7LL) >> 3LL;
+
+	/* Bytes at the end of a row that are 'crossed out' */
     pad_bytes_per_row = (4 - n_bytes_per_row) & 3;
+
+	/* Total bytes in image */
     n_bytes_image = avctx->height * (n_bytes_per_row + pad_bytes_per_row);
 
     // STRUCTURE.field refer to the MSVC documentation for BITMAPFILEHEADER
     // and related pages.
-#define SIZE_BITMAPFILEHEADER 14
-#define SIZE_BITMAPINFOHEADER 40
-    hsize = SIZE_BITMAPFILEHEADER + SIZE_BITMAPINFOHEADER + (pal_entries << 2);
+#define SIZE_XKCDFILEHEADER 17
+    hsize = SIZE_XKCDFILEHEADER + (pal_entries << 2);
     n_bytes = n_bytes_image + hsize;
     if ((ret = ff_alloc_packet2(avctx, pkt, n_bytes)) < 0)
         return ret;
@@ -145,17 +143,19 @@ static int bmp_encode_frame(AVCodecContext *avctx, AVPacket *pkt,
     // BMP files are bottom-to-top so we start from the end...
     ptr = p->data[0] + (avctx->height - 1) * p->linesize[0];
     buf = pkt->data + hsize;
+
+	/* Write the image */
+
     for(i = 0; i < avctx->height; i++) {
-        if (bit_count == 16) {
-            const uint16_t *src = (const uint16_t *) ptr;
-            uint16_t *dst = (uint16_t *) buf;
-            for(n = 0; n < avctx->width; n++)
-                AV_WL16(dst + n, src[n]);
-        } else {
-            memcpy(buf, ptr, n_bytes_per_row);
-        }
+		/* Write line to buffer */
+		memcpy(buf, ptr, n_bytes_per_row);
+
+		/* Start buffer at a new line */
         buf += n_bytes_per_row;
+
+		/* Null out the array */
         memset(buf, 0, pad_bytes_per_row);
+
         buf += pad_bytes_per_row;
         ptr -= p->linesize[0]; // ... and go back
     }
