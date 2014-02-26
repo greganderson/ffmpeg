@@ -1,5 +1,5 @@
 /*
- * internals for BMP codecs
+ * internals for XKCD codecs
  * Copyright (c) 2005 Mans Rullgard
  *
  * This file is part of FFmpeg.
@@ -19,16 +19,16 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#ifndef AVCODEC_BMP_H
-#define AVCODEC_BMP_H
+#ifndef AVCODEC_XKCD_H
+#define AVCODEC_XKCD_H
 
 #include "avcodec.h"
 
 typedef enum {
-    BMP_RGB         =0,
-    BMP_RLE8        =1,
-    BMP_RLE4        =2,
-    BMP_BITFIELDS   =3,
+    XKCD_RGB         =0,
+    XKCD_RLE8        =1,
+    XKCD_RLE4        =2,
+    XKCD_BITFIELDS   =3,
 } BiCompression;
 
-#endif /* AVCODEC_BMP_H */
+#endif /* AVCODEC_XKCD_H */
