@@ -21,7 +21,7 @@
 
 #include "avcodec.h"
 #include "bytestream.h"
-#include "bmp.h"
+#include "xkcd.h"
 #include "internal.h"
 #include "msrledec.h"
 
@@ -114,15 +114,15 @@ static int bmp_decode_frame(AVCodecContext *avctx,
     if (ihsize >= 40)
         comp = bytestream_get_le32(&buf);
     else
-        comp = BMP_RGB;
+        comp = XKCD_RGB;
 
-    if (comp != BMP_RGB && comp != BMP_BITFIELDS && comp != BMP_RLE4 &&
-        comp != BMP_RLE8) {
+    if (comp != XKCD_RGB && comp != XKCD_BITFIELDS && comp != XKCD_RLE4 &&
+        comp != XKCD_RLE8) {
         av_log(avctx, AV_LOG_ERROR, "BMP coding %d not supported\n", comp);
         return AVERROR_INVALIDDATA;
     }
 
-    if (comp == BMP_BITFIELDS) {
+    if (comp == XKCD_BITFIELDS) {
         buf += 20;
         rgb[0] = bytestream_get_le32(&buf);
         rgb[1] = bytestream_get_le32(&buf);
@@ -137,7 +137,7 @@ static int bmp_decode_frame(AVCodecContext *avctx,
 
     switch (depth) {
     case 32:
-        if (comp == BMP_BITFIELDS) {
+        if (comp == XKCD_BITFIELDS) {
             if (rgb[0] == 0xFF000000 && rgb[1] == 0x00FF0000 && rgb[2] == 0x0000FF00)
                 avctx->pix_fmt = alpha ? AV_PIX_FMT_ABGR : AV_PIX_FMT_0BGR;
             else if (rgb[0] == 0x00FF0000 && rgb[1] == 0x0000FF00 && rgb[2] == 0x000000FF)
@@ -158,9 +158,9 @@ static int bmp_decode_frame(AVCodecContext *avctx,
         avctx->pix_fmt = AV_PIX_FMT_BGR24;
         break;
     case 16:
-        if (comp == BMP_RGB)
+        if (comp == XKCD_RGB)
             avctx->pix_fmt = AV_PIX_FMT_RGB555;
-        else if (comp == BMP_BITFIELDS) {
+        else if (comp == XKCD_BITFIELDS) {
             if (rgb[0] == 0xF800 && rgb[1] == 0x07E0 && rgb[2] == 0x001F)
                avctx->pix_fmt = AV_PIX_FMT_RGB565;
             else if (rgb[0] == 0x7C00 && rgb[1] == 0x03E0 && rgb[2] == 0x001F)
@@ -209,14 +209,14 @@ static int bmp_decode_frame(AVCodecContext *avctx,
     /* Line size in file multiple of 4 */
     n = ((avctx->width * depth + 31) / 8) & ~3;
 
-    if (n * avctx->height > dsize && comp != BMP_RLE4 && comp != BMP_RLE8) {
+    if (n * avctx->height > dsize && comp != XKCD_RLE4 && comp != XKCD_RLE8) {
         av_log(avctx, AV_LOG_ERROR, "not enough data (%d < %d)\n",
                dsize, n * avctx->height);
         return AVERROR_INVALIDDATA;
     }
 
     // RLE may skip decoding some picture areas, so blank picture before decoding
-    if (comp == BMP_RLE4 || comp == BMP_RLE8)
+    if (comp == XKCD_RLE4 || comp == XKCD_RLE8)
         memset(p->data[0], 0, avctx->height * p->linesize[0]);
 
     if (height > 0) {
@@ -257,8 +257,8 @@ static int bmp_decode_frame(AVCodecContext *avctx,
         }
         buf = buf0 + hsize;
     }
-    if (comp == BMP_RLE4 || comp == BMP_RLE8) {
-        if (comp == BMP_RLE8 && height < 0) {
+    if (comp == XKCD_RLE4 || comp == XKCD_RLE8) {
+        if (comp == XKCD_RLE8 && height < 0) {
             p->data[0]    +=  p->linesize[0] * (avctx->height - 1);
             p->linesize[0] = -p->linesize[0];
         }
