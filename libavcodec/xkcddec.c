@@ -29,27 +29,29 @@ static int bmp_decode_frame(AVCodecContext *avctx,
                             void *data, int *got_frame,
                             AVPacket *avpkt)
 {
-    const uint8_t *buf = avpkt->data;
-    int buf_size       = avpkt->size;
+    const uint8_t *buf = avpkt->data; /* Buffer with data */
+    int buf_size       = avpkt->size; /* Size of buffer */
     AVFrame *p         = data;
-    unsigned int fsize, hsize;
-    int width, height;
-    unsigned int depth;
+    unsigned int fsize, hsize; /* File size, header size */
+    int width, height;		/* Width and height of image */
+    unsigned int depth;		/* Number of bits per pixel */
     BiCompression comp;
     unsigned int ihsize;
     int i, j, n, linesize, ret;
-    uint32_t rgb[3] = {0};
-    uint32_t alpha = 0;
+    uint32_t rgb[3] = {0};	/* Colors */
+    uint32_t alpha = 0;		/* Transparency */
     uint8_t *ptr;
     int dsize;
     const uint8_t *buf0 = buf;
     GetByteContext gb;
 
+	/* Check initial header size */
     if (buf_size < 14) {
         av_log(avctx, AV_LOG_ERROR, "buf size too small (%d)\n", buf_size);
         return AVERROR_INVALIDDATA;
     }
 
+	/* Make sure header contains correct filetype information */
     if (bytestream_get_byte(&buf) != 'B' ||
         bytestream_get_byte(&buf) != 'M') {
         av_log(avctx, AV_LOG_ERROR, "bad magic number\n");
