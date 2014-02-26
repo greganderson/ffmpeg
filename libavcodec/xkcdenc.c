@@ -33,27 +33,8 @@ static const uint32_t rgb444_masks[]  = { 0x0F00, 0x00F0, 0x000F };
 
 static av_cold int bmp_encode_init(AVCodecContext *avctx){
     switch (avctx->pix_fmt) {
-    case AV_PIX_FMT_BGRA:
-        avctx->bits_per_coded_sample = 32;
-        break;
-    case AV_PIX_FMT_BGR24:
-        avctx->bits_per_coded_sample = 24;
-        break;
-    case AV_PIX_FMT_RGB555:
-    case AV_PIX_FMT_RGB565:
-    case AV_PIX_FMT_RGB444:
-        avctx->bits_per_coded_sample = 16;
-        break;
     case AV_PIX_FMT_RGB8:
-    case AV_PIX_FMT_BGR8:
-    case AV_PIX_FMT_RGB4_BYTE:
-    case AV_PIX_FMT_BGR4_BYTE:
-    case AV_PIX_FMT_GRAY8:
-    case AV_PIX_FMT_PAL8:
         avctx->bits_per_coded_sample = 8;
-        break;
-    case AV_PIX_FMT_MONOBLACK:
-        avctx->bits_per_coded_sample = 1;
         break;
     default:
         av_log(avctx, AV_LOG_INFO, "unsupported pixel format\n");
@@ -121,8 +102,8 @@ static int bmp_encode_frame(AVCodecContext *avctx, AVPacket *pkt,
     if ((ret = ff_alloc_packet2(avctx, pkt, n_bytes)) < 0)
         return ret;
     buf = pkt->data;
-    bytestream_put_byte(&buf, 'B');                   // BITMAPFILEHEADER.bfType
-    bytestream_put_byte(&buf, 'M');                   // do.
+    bytestream_put_byte(&buf, 'X');                   // BITMAPFILEHEADER.bfType
+    bytestream_put_byte(&buf, 'K');                   // do.
     bytestream_put_le32(&buf, n_bytes);               // BITMAPFILEHEADER.bfSize
     bytestream_put_le16(&buf, 0);                     // BITMAPFILEHEADER.bfReserved1
     bytestream_put_le16(&buf, 0);                     // BITMAPFILEHEADER.bfReserved2
