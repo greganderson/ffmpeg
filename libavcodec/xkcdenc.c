@@ -103,9 +103,15 @@ static int bmp_encode_frame(AVCodecContext *avctx, AVPacket *pkt,
     if (pal && !pal_entries) pal_entries = 1 << bit_count;
 
 	/* Number of bytes of image data in a row */
+	/* (width in pixels * bits per pixel) / 8 to put it in bytes.
+	Add 7 bits to the width in bits to make sure to have enough
+	bytes of storage when we divide (making sure when it truncates
+	in division, it doesn't get rid of what we need) */
     n_bytes_per_row = ((int64_t)avctx->width * (int64_t)bit_count + 7LL) >> 3LL;
 
 	/* Bytes at the end of a row that are 'crossed out' */
+	/* Take the remainder from the above bytes and fill in with
+	padding by looking at the last two bits after 4 - n_bytes_per_row.*/
     pad_bytes_per_row = (4 - n_bytes_per_row) & 3;
 
 	/* Total bytes in image */
@@ -113,36 +119,30 @@ static int bmp_encode_frame(AVCodecContext *avctx, AVPacket *pkt,
 
     // STRUCTURE.field refer to the MSVC documentation for BITMAPFILEHEADER
     // and related pages.
-#define SIZE_XKCDFILEHEADER 17
-    hsize = SIZE_XKCDFILEHEADER + (pal_entries << 2);
+#define SIZE_XKCDFILEHEADER 14
+    hsize = SIZE_XKCDFILEHEADER;
+
+	/* Number of bytes in the entire file */
     n_bytes = n_bytes_image + hsize;
+
     if ((ret = ff_alloc_packet2(avctx, pkt, n_bytes)) < 0)
         return ret;
     buf = pkt->data;
-    bytestream_put_byte(&buf, 'X');                   // BITMAPFILEHEADER.bfType
-    bytestream_put_byte(&buf, 'K');                   // do.
-    bytestream_put_byte(&buf, 'C');                   // do.
-    bytestream_put_byte(&buf, 'D');                   // do.
-    bytestream_put_le32(&buf, n_bytes);               // BITMAPFILEHEADER.bfSize
-    bytestream_put_le16(&buf, 0);                     // BITMAPFILEHEADER.bfReserved1
-    bytestream_put_le16(&buf, 0);                     // BITMAPFILEHEADER.bfReserved2
-    bytestream_put_le32(&buf, hsize);                 // BITMAPFILEHEADER.bfOffBits
-    bytestream_put_le32(&buf, SIZE_BITMAPINFOHEADER); // BITMAPINFOHEADER.biSize
-    bytestream_put_le32(&buf, avctx->width);          // BITMAPINFOHEADER.biWidth
-    bytestream_put_le32(&buf, avctx->height);         // BITMAPINFOHEADER.biHeight
-    bytestream_put_le16(&buf, 1);                     // BITMAPINFOHEADER.biPlanes
-    bytestream_put_le16(&buf, bit_count);             // BITMAPINFOHEADER.biBitCount
-    bytestream_put_le32(&buf, compression);           // BITMAPINFOHEADER.biCompression
-    bytestream_put_le32(&buf, n_bytes_image);         // BITMAPINFOHEADER.biSizeImage
-    bytestream_put_le32(&buf, 0);                     // BITMAPINFOHEADER.biXPelsPerMeter
-    bytestream_put_le32(&buf, 0);                     // BITMAPINFOHEADER.biYPelsPerMeter
-    bytestream_put_le32(&buf, 0);                     // BITMAPINFOHEADER.biColorUsed
-    bytestream_put_le32(&buf, 0);                     // BITMAPINFOHEADER.biColorImportant
-    for (i = 0; i < pal_entries; i++)
-        bytestream_put_le32(&buf, pal[i] & 0xFFFFFF);
+
+	/* Start building the header */
+    bytestream_put_byte(&buf, 'X');                   // Filetype
+    bytestream_put_byte(&buf, 'K');                   // Filetype
+    bytestream_put_byte(&buf, 'C');                   // Filetype
+    bytestream_put_byte(&buf, 'D');                   // Filetype
+    bytestream_put_le32(&buf, n_bytes);               // Size of entire file
+    bytestream_put_le16(&buf, avctx->width);          // Width of image in pixels
+    bytestream_put_le16(&buf, avctx->height);         // Height of image in pixels
+    bytestream_put_le16(&buf, bit_count);             // Bits per pixel
+
+
     // BMP files are bottom-to-top so we start from the end...
-    ptr = p->data[0] + (avctx->height - 1) * p->linesize[0];
-    buf = pkt->data + hsize;
+    ptr = p->data[0];
+    /*buf = pkt->data + hsize;*/
 
 	/* Write the image */
 
@@ -150,14 +150,17 @@ static int bmp_encode_frame(AVCodecContext *avctx, AVPacket *pkt,
 		/* Write line to buffer */
 		memcpy(buf, ptr, n_bytes_per_row);
 
-		/* Start buffer at a new line */
+		/* Point buffer to the end of the data and start of the padding */
         buf += n_bytes_per_row;
 
-		/* Null out the array */
+		/* Null out the array which creates padding */
         memset(buf, 0, pad_bytes_per_row);
 
+		/* Point buffer to the end of the padding and start of the new data */
         buf += pad_bytes_per_row;
-        ptr -= p->linesize[0]; // ... and go back
+
+		/* Now point to next row */
+        ptr += p->linesize[0];
     }
 
     pkt->flags |= AV_PKT_FLAG_KEY;
