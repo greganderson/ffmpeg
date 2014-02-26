@@ -123,6 +123,8 @@ static int bmp_encode_frame(AVCodecContext *avctx, AVPacket *pkt,
     buf = pkt->data;
     bytestream_put_byte(&buf, 'X');                   // BITMAPFILEHEADER.bfType
     bytestream_put_byte(&buf, 'K');                   // do.
+    bytestream_put_byte(&buf, 'C');                   // do.
+    bytestream_put_byte(&buf, 'D');                   // do.
     bytestream_put_le32(&buf, n_bytes);               // BITMAPFILEHEADER.bfSize
     bytestream_put_le16(&buf, 0);                     // BITMAPFILEHEADER.bfReserved1
     bytestream_put_le16(&buf, 0);                     // BITMAPFILEHEADER.bfReserved2
@@ -136,8 +138,8 @@ static int bmp_encode_frame(AVCodecContext *avctx, AVPacket *pkt,
     bytestream_put_le32(&buf, n_bytes_image);         // BITMAPINFOHEADER.biSizeImage
     bytestream_put_le32(&buf, 0);                     // BITMAPINFOHEADER.biXPelsPerMeter
     bytestream_put_le32(&buf, 0);                     // BITMAPINFOHEADER.biYPelsPerMeter
-    bytestream_put_le32(&buf, 0);                     // BITMAPINFOHEADER.biClrUsed
-    bytestream_put_le32(&buf, 0);                     // BITMAPINFOHEADER.biClrImportant
+    bytestream_put_le32(&buf, 0);                     // BITMAPINFOHEADER.biColorUsed
+    bytestream_put_le32(&buf, 0);                     // BITMAPINFOHEADER.biColorImportant
     for (i = 0; i < pal_entries; i++)
         bytestream_put_le32(&buf, pal[i] & 0xFFFFFF);
     // BMP files are bottom-to-top so we start from the end...

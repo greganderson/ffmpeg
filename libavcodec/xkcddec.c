@@ -53,7 +53,9 @@ static int bmp_decode_frame(AVCodecContext *avctx,
 
 	/* Make sure header contains correct filetype information */
     if (bytestream_get_byte(&buf) != 'X' ||
-        bytestream_get_byte(&buf) != 'K') {
+        bytestream_get_byte(&buf) != 'K' ||
+		bytestream_get_byte(&buf) != 'C' ||
+		bytestream_get_byte(&buf) != 'D') {
         av_log(avctx, AV_LOG_ERROR, "illegal filetype information in header\n");
         return AVERROR_INVALIDDATA;
     }
