@@ -67,13 +67,13 @@ static int xkcd_encode_frame(AVCodecContext *avctx, AVPacket *pkt,
     const AVFrame * const p = pict;	/* Actual image data */
 
 	/* hsize = header size */
-    int n_bytes_image, n_bytes_per_row, n_bytes, i, n, hsize, ret;
+    int n_bytes_image, n_bytes_per_row, n_bytes, i, hsize, ret;
 
     const uint32_t *pal = NULL;	/* pallete entries */
     uint32_t palette256[256];
 
 	/* pad_bytes_per_row = bytes of null to fill in at the end of a row of image data */
-    int pad_bytes_per_row, pal_entries = 0, compression = XKCD_RGB;
+    int pad_bytes_per_row, pal_entries = 0;
 
 	/* Number of bits per pixel */
     int bit_count = avctx->bits_per_coded_sample;
@@ -135,7 +135,6 @@ static int xkcd_encode_frame(AVCodecContext *avctx, AVPacket *pkt,
     bytestream_put_byte(&buf, 'C');                   // Filetype
     bytestream_put_byte(&buf, 'D');                   // Filetype
     bytestream_put_le32(&buf, n_bytes);               // Size of entire file
-	bytestream_put_le32(&buf, hsize);				  // Size of the header
     bytestream_put_le16(&buf, avctx->width);          // Width of image in pixels
     bytestream_put_le16(&buf, avctx->height);         // Height of image in pixels
     bytestream_put_le16(&buf, bit_count);             // Bits per pixel

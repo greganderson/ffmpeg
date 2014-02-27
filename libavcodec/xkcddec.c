@@ -30,16 +30,13 @@ static int xkcd_decode_frame(AVCodecContext *avctx,
                             AVPacket *avpkt)
 {
     const uint8_t *buf = avpkt->data; /* Buffer with data */
-    int buf_size       = avpkt->size; /* Size of buffer */
+    int buf_size       = avpkt->size; /* Size of file we are decoding */
     AVFrame *p         = data;
     unsigned int fsize, hsize; /* File size, header size */
     unsigned int depth;
-    int i, j, n, linesize, ret;
-    uint32_t rgb[3] = {0};	/* Colors */
+    int i, n, linesize, ret;
     uint8_t *ptr;
-    int dsize;	/* Data/image size */
     const uint8_t *buf0 = buf;
-    GetByteContext gb;
 
 	/* Check initial header size */
     if (buf_size < 14) {
@@ -64,7 +61,7 @@ static int xkcd_decode_frame(AVCodecContext *avctx,
         fsize = buf_size;
     }
 
-    hsize  = bytestream_get_le32(&buf); /* header size */
+    hsize  = 14;
 
 	/* Check to make sure the file size is larger than the header size */
     if (fsize <= hsize) {
@@ -89,7 +86,6 @@ static int xkcd_decode_frame(AVCodecContext *avctx,
     p->key_frame = 1;
 
     buf   = buf0 + hsize; /* Point buf at the start of the pixel array */
-    dsize = buf_size - hsize;
 
     /* Line size in file multiple of 4 */
     n = ((avctx->width * depth + 31) / 8) & ~3;
@@ -103,7 +99,7 @@ static int xkcd_decode_frame(AVCodecContext *avctx,
 
 	/* Stores how many colors there are, determined by the number of bits per pixel.
 	   For example, 8 bits = 256 colors, 4 bits = 16 colors*/
-	int colors = 1 << depth; 
+	/*int colors = 1 << depth; */
 
 	/* Null out the buffer to hold the image */
 	memset(p->data[1], 0, 1024);
