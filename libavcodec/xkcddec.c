@@ -25,7 +25,7 @@
 #include "internal.h"
 #include "msrledec.h"
 
-static int bmp_decode_frame(AVCodecContext *avctx,
+static int xkcd_decode_frame(AVCodecContext *avctx,
                             void *data, int *got_frame,
                             AVPacket *avpkt)
 {
@@ -334,9 +334,9 @@ static int bmp_decode_frame(AVCodecContext *avctx,
 
 AVCodec ff_xkcd_decoder = {
     .name           = "xkcd",
-    .long_name      = NULL_IF_CONFIG_SMALL("BMP (Windows and OS/2 bitmap)"),
+    .long_name      = NULL_IF_CONFIG_SMALL("XKCD (eXample of a Kinetic Coder/Decoder) file"),
     .type           = AVMEDIA_TYPE_VIDEO,
     .id             = AV_CODEC_ID_XKCD,
-    .decode         = bmp_decode_frame,
+    .decode         = xkcd_decode_frame,
     .capabilities   = CODEC_CAP_DR1,
 };
