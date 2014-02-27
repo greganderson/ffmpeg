@@ -135,6 +135,7 @@ static int xkcd_encode_frame(AVCodecContext *avctx, AVPacket *pkt,
     bytestream_put_byte(&buf, 'C');                   // Filetype
     bytestream_put_byte(&buf, 'D');                   // Filetype
     bytestream_put_le32(&buf, n_bytes);               // Size of entire file
+	bytestream_put_le32(&buf, hsize);				  // Size of the header
     bytestream_put_le16(&buf, avctx->width);          // Width of image in pixels
     bytestream_put_le16(&buf, avctx->height);         // Height of image in pixels
     bytestream_put_le16(&buf, bit_count);             // Bits per pixel

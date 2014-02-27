@@ -67,15 +67,19 @@ static int xkcd_decode_frame(AVCodecContext *avctx,
         fsize = buf_size;
     }
 
-    buf += 2; /* reserved1 */
-    buf += 2; /* reserved2 */
+    /* Uncomment this, testing for now.. buf += 2; */ /* reserved1 */
+    /* Uncomment this, testing for now.. buf += 2; */ /* reserved2 */
 
     hsize  = bytestream_get_le32(&buf); /* header size */
-    ihsize = bytestream_get_le32(&buf); /* more header size */
+
+	/* Uncomment this if you run into problems, probably not applicable
+	 * to us 
+	ihsize = bytestream_get_le32(&buf);  //more header size 
     if (ihsize + 14 > hsize) {
         av_log(avctx, AV_LOG_ERROR, "invalid header size %d\n", hsize);
         return AVERROR_INVALIDDATA;
     }
+	*/
 
     /* sometimes file size is set to some headers size, set a real size in that case */
     if (fsize == 14 || fsize == ihsize + 14)
