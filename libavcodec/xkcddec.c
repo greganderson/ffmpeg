@@ -88,7 +88,7 @@ static int xkcd_decode_frame(AVCodecContext *avctx,
     p->pict_type = AV_PICTURE_TYPE_I;
     p->key_frame = 1;
 
-    buf   = buf0 + hsize;
+    buf   = buf0 + hsize; /* Point buf at the start of the pixel array */
     dsize = buf_size - hsize;
 
     /* Line size in file multiple of 4 */
@@ -101,26 +101,12 @@ static int xkcd_decode_frame(AVCodecContext *avctx,
 	ptr      = p->data[0];	/* Actual pointer to the image data */
 	linesize = -p->linesize[0];
 
-    if (avctx->pix_fmt == AV_PIX_FMT_PAL8) {
-        int colors = 1 << depth;
+	/* Stores how many colors there are, determined by the number of bits per pixel.
+	   For example, 8 bits = 256 colors, 4 bits = 16 colors*/
+	int colors = 1 << depth; 
 
-        memset(p->data[1], 0, 1024);
-
-        buf = buf0 + 14 + ihsize; //palette location
-        // OS/2 bitmap, 3 bytes per palette entry
-        if ((hsize-ihsize-14) < (colors << 2)) {
-            if ((hsize-ihsize-14) < colors * 3) {
-                av_log(avctx, AV_LOG_ERROR, "palette doesn't fit in packet\n");
-                return AVERROR_INVALIDDATA;
-            }
-            for (i = 0; i < colors; i++)
-                ((uint32_t*)p->data[1])[i] = (0xFFU<<24) | bytestream_get_le24(&buf);
-        } else {
-            for (i = 0; i < colors; i++)
-                ((uint32_t*)p->data[1])[i] = 0xFFU << 24 | bytestream_get_le32(&buf);
-        }
-        buf = buf0 + hsize;
-    }
+	/* Null out the buffer to hold the image */
+	memset(p->data[1], 0, 1024);
 
 	/* Decode the actual image */
 	for (i = 0; i < avctx->height; i++) {
