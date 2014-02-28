@@ -57,7 +57,7 @@ static av_cold int xkcd_encode_init(AVCodecContext *avctx){
     avctx->coded_frame = av_frame_alloc();
     if (!avctx->coded_frame)
         return AVERROR(ENOMEM);
-
+	
     return 0;
 }
 
@@ -165,6 +165,7 @@ static int xkcd_encode_frame(AVCodecContext *avctx, AVPacket *pkt,
 
     pkt->flags |= AV_PKT_FLAG_KEY;
     *got_packet = 1;
+
     return 0;
 }
 

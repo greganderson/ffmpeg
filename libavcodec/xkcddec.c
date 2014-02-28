@@ -43,7 +43,6 @@ static int xkcd_decode_frame(AVCodecContext *avctx,
         av_log(avctx, AV_LOG_ERROR, "buf size too small (%d)\n", buf_size);
         return AVERROR_INVALIDDATA;
     }
-
 	/* Make sure header contains correct filetype information */
     if (bytestream_get_byte(&buf) != 'X' ||
         bytestream_get_byte(&buf) != 'K' ||
@@ -78,8 +77,8 @@ static int xkcd_decode_frame(AVCodecContext *avctx,
 	depth = bytestream_get_le16(&buf);
 
 	avctx->pix_fmt = AV_PIX_FMT_PAL8;
-
-    if ((ret = ff_get_buffer(avctx, p, 0)) < 0)
+    
+	if ((ret = ff_get_buffer(avctx, p, 0)) < 0)
         return ret;
 
     p->pict_type = AV_PICTURE_TYPE_I;
@@ -106,13 +105,13 @@ static int xkcd_decode_frame(AVCodecContext *avctx,
 
 	/* Decode the actual image */
 	for (i = 0; i < avctx->height; i++) {
+		/* Segfault on the 3rd iteration of the loop, loop should proceed through 233 iterations */	
 		memcpy(ptr, buf, n);
 		buf += n;
 		ptr += linesize;
 	}
 
     *got_frame = 1;
-
     return buf_size;
 }
 
