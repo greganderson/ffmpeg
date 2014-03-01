@@ -103,9 +103,11 @@ static int xkcd_decode_frame(AVCodecContext *avctx,
 	/* Null out the buffer to hold the image */
 	memset(p->data[1], 0, 1024);
 
+
 	/* Decode the actual image */
 	for (i = 0; i < avctx->height; i++) {
 		/* Segfault on the 3rd iteration of the loop, loop should proceed through 233 iterations */	
+		av_log(avctx, AV_LOG_ERROR, "Got here %d", i);
 		memcpy(ptr, buf, n);
 		buf += n;
 		ptr += linesize;
