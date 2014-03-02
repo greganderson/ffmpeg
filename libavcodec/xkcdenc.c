@@ -1,5 +1,5 @@
 /*
- * BMP image format encoder
+ * XKCD image format encoder
  * Copyright (c) 2006, 2007 Michel Bardiaux
  * Copyright (c) 2009 Daniel Verkamp <daniel at drv.nu>
  *
@@ -78,10 +78,7 @@ static int xkcd_encode_frame(AVCodecContext *avctx, AVPacket *pkt,
 	/* Total bytes in image */
     bytes_in_image = avctx->height * (bytes_per_row + pad_bytes_per_row);
 
-    // STRUCTURE.field refer to the MSVC documentation for BITMAPFILEHEADER
-    // and related pages.
-#define SIZE_XKCDFILEHEADER 14
-    header_size = SIZE_XKCDFILEHEADER;
+    header_size = 14;
 
 	/* Number of bytes in the entire file */
     total_bytes = bytes_in_image + header_size;
@@ -101,7 +98,7 @@ static int xkcd_encode_frame(AVCodecContext *avctx, AVPacket *pkt,
     bytestream_put_le16(&buffer, bit_count);             // Bits per pixel
 
 
-    // BMP files are bottom-to-top so we start from the end...
+    // XKCD files are bottom-to-top so we start from the end...
     buffer_data = picture->data[0];
 
 	/* Write the image */
