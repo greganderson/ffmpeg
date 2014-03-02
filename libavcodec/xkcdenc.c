@@ -47,10 +47,10 @@ static av_cold int xkcd_encode_init(AVCodecContext *avctx){
 static int xkcd_encode_frame(AVCodecContext *avctx, AVPacket *pkt,
                             const AVFrame *pict, int *got_packet)
 {
-    const AVFrame * const p = pict;	/* Actual image data */
+    const AVFrame * const picture = pict;	/* Actual image data */
 
-	/* hsize = header size */
-    int n_bytes_image, n_bytes_per_row, n_bytes, i, hsize, ret;
+	/* header_size = header size */
+    int bytes_in_image, bytes_per_row, total_bytes, i, header_size, ret;
 
 	/* pad_bytes_per_row = bytes of null to fill in at the end of a row of image data */
     int pad_bytes_per_row = 0;
@@ -58,8 +58,8 @@ static int xkcd_encode_frame(AVCodecContext *avctx, AVPacket *pkt,
 	/* Number of bits per pixel */
     int bit_count = avctx->bits_per_coded_sample;
 
-	/* ptr = data to be buffered, buf = buffer to write to */
-    uint8_t *ptr, *buf;
+	/* buffer_data = data to be buffered, buf = buffer to write to */
+    uint8_t *buffer_data, *buffer;
 
     avctx->coded_frame->pict_type = AV_PICTURE_TYPE_I;
     avctx->coded_frame->key_frame = 1;
@@ -69,60 +69,58 @@ static int xkcd_encode_frame(AVCodecContext *avctx, AVPacket *pkt,
 	Add 7 bits to the width in bits to make sure to have enough
 	bytes of storage when we divide (making sure when it truncates
 	in division, it doesn't get rid of what we need) */
-    n_bytes_per_row = ((int64_t)avctx->width * (int64_t)bit_count + 7LL) >> 3LL;
+    bytes_per_row = ((int64_t)avctx->width * (int64_t)bit_count + 7LL) >> 3LL;
 
 	/* Bytes at the end of a row that are 'crossed out' */
 	/* Take the remainder from the above bytes and fill in with
-	padding by looking at the last two bits after 4 - n_bytes_per_row.*/
-    pad_bytes_per_row = (4 - n_bytes_per_row) & 3;
+	padding by looking at the last two bits after 4 - bytes_per_row.*/
+    pad_bytes_per_row = (4 - bytes_per_row) & 3;
 
 	/* Total bytes in image */
-    n_bytes_image = avctx->height * (n_bytes_per_row + pad_bytes_per_row);
+    bytes_in_image = avctx->height * (bytes_per_row + pad_bytes_per_row);
 
     // STRUCTURE.field refer to the MSVC documentation for BITMAPFILEHEADER
     // and related pages.
 #define SIZE_XKCDFILEHEADER 14
-    hsize = SIZE_XKCDFILEHEADER;
+    header_size = SIZE_XKCDFILEHEADER;
 
 	/* Number of bytes in the entire file */
-    n_bytes = n_bytes_image + hsize;
+    total_bytes = bytes_in_image + header_size;
 
-    if ((ret = ff_alloc_packet2(avctx, pkt, n_bytes)) < 0)
+    if ((ret = ff_alloc_packet2(avctx, pkt, total_bytes)) < 0)
         return ret;
-    buf = pkt->data;
+    buffer = pkt->data;
 
 	/* Start building the header */
-    bytestream_put_byte(&buf, 'X');                   // Filetype
-    bytestream_put_byte(&buf, 'K');                   // Filetype
-    bytestream_put_byte(&buf, 'C');                   // Filetype
-    bytestream_put_byte(&buf, 'D');                   // Filetype
-    bytestream_put_le32(&buf, n_bytes);               // Size of entire file
-    bytestream_put_le16(&buf, avctx->width);          // Width of image in pixels
-    bytestream_put_le16(&buf, avctx->height);         // Height of image in pixels
-    bytestream_put_le16(&buf, bit_count);             // Bits per pixel
+    bytestream_put_byte(&buffer, 'X');                   // Filetype
+    bytestream_put_byte(&buffer, 'K');                   // Filetype
+    bytestream_put_byte(&buffer, 'C');                   // Filetype
+    bytestream_put_byte(&buffer, 'D');                   // Filetype
+    bytestream_put_le32(&buffer, total_bytes);               // Size of entire file
+    bytestream_put_le16(&buffer, avctx->width);          // Width of image in pixels
+    bytestream_put_le16(&buffer, avctx->height);         // Height of image in pixels
+    bytestream_put_le16(&buffer, bit_count);             // Bits per pixel
 
 
     // BMP files are bottom-to-top so we start from the end...
-    ptr = p->data[0];
-    /*buf = pkt->data + hsize;*/
+    buffer_data = picture->data[0];
 
 	/* Write the image */
-
     for(i = 0; i < avctx->height; i++) {
 		/* Write line to buffer */
-		memcpy(buf, ptr, n_bytes_per_row);
+		memcpy(buffer, buffer_data, bytes_per_row);
 
 		/* Point buffer to the end of the data and start of the padding */
-        buf += n_bytes_per_row;
+        buffer += bytes_per_row;
 
 		/* Null out the array which creates padding */
-        memset(buf, 0, pad_bytes_per_row);
+        memset(buffer, 0, pad_bytes_per_row);
 
 		/* Point buffer to the end of the padding and start of the new data */
-        buf += pad_bytes_per_row;
+        buffer += pad_bytes_per_row;
 
 		/* Now point to next row */
-        ptr += p->linesize[0];
+        buffer_data += picture->linesize[0];
     }
 
     pkt->flags |= AV_PKT_FLAG_KEY;
