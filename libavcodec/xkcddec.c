@@ -1,5 +1,5 @@
 /*
- * BMP image format decoder
+ * XKCD image format decoder
  * Copyright (c) 2005 Mans Rullgard
  *
  * This file is part of FFmpeg.
@@ -21,9 +21,7 @@
 
 #include "avcodec.h"
 #include "bytestream.h"
-#include "xkcd.h"
 #include "internal.h"
-#include "msrledec.h"
 
 static int xkcd_decode_frame(AVCodecContext *avctx,
                             void *data, int *got_frame,
@@ -31,12 +29,11 @@ static int xkcd_decode_frame(AVCodecContext *avctx,
 {
     const uint8_t *buf = avpkt->data; /* Buffer with data */
     int buf_size       = avpkt->size; /* Size of file we are decoding */
-    AVFrame *p         = data;
-    unsigned int fsize, hsize; /* File size, header size */
+    AVFrame *picture   = data;
+    unsigned int filesize, headersize; /* File size, header size */
     unsigned int depth;	/* bits per pixel */
     int i, n, linesize, ret;
     uint8_t *ptr;
-    const uint8_t *buf0 = buf;
 
 	/* Check initial header size */
     if (buf_size < 14) {
@@ -53,19 +50,19 @@ static int xkcd_decode_frame(AVCodecContext *avctx,
     }
 
 	/* Check file size */
-    fsize = bytestream_get_le32(&buf);
-    if (buf_size < fsize) {
+    filesize = bytestream_get_le32(&buf);
+    if (buf_size < filesize) {
         av_log(avctx, AV_LOG_ERROR, "not enough data (%d < %d), trying to decode anyway\n",
-               buf_size, fsize);
-        fsize = buf_size;
+               buf_size, filesize);
+        filesize = buf_size;
     }
 
-    hsize  = 14;
+    headersize  = 14;
 
 	/* Check to make sure the file size is larger than the header size */
-    if (fsize <= hsize) {
+    if (filesize <= headersize) {
         av_log(avctx, AV_LOG_ERROR, "declared file size is less than header size (%d < %d)\n",
-               fsize, hsize);
+               filesize, headersize);
         return AVERROR_INVALIDDATA;
     }
 
@@ -79,20 +76,20 @@ static int xkcd_decode_frame(AVCodecContext *avctx,
 	/* Set the color format */
 	avctx->pix_fmt = AV_PIX_FMT_RGB8;
     
-	if ((ret = ff_get_buffer(avctx, p, 0)) < 0)
+	if ((ret = ff_get_buffer(avctx, picture, 0)) < 0)
         return ret;
 
-    p->pict_type = AV_PICTURE_TYPE_I;
-    p->key_frame = 1;
+    picture->pict_type = AV_PICTURE_TYPE_I;
+    picture->key_frame = 1;
 
-    buf   = buf0 + hsize; /* Point buf at the start of the pixel array */
+    buf += headersize; /* Point buf at the start of the pixel array */
 
     /* Line size in file multiple of 4 */
     n = ((avctx->width * depth + 31) / 8) & ~3;
 
 	/* Set the pointer to the top left part of the image */
-	ptr      = p->data[0];	/* Actual pointer to the image data */
-	linesize = p->linesize[0];
+	ptr      = picture->data[0];		/* Actual pointer to the image data */
+	linesize = picture->linesize[0];	/* Size of the line in bytes */
 
 	/* Decode the actual image */
 	for (i = 0; i < avctx->height; i++) {
