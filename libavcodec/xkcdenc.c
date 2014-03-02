@@ -24,7 +24,6 @@
 #include "libavutil/avassert.h"
 #include "avcodec.h"
 #include "bytestream.h"
-#include "xkcd.h"
 #include "internal.h"
 
 static av_cold int xkcd_encode_init(AVCodecContext *avctx){
