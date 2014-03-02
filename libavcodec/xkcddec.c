@@ -33,7 +33,7 @@ static int xkcd_decode_frame(AVCodecContext *avctx,
     int buf_size       = avpkt->size; /* Size of file we are decoding */
     AVFrame *p         = data;
     unsigned int fsize, hsize; /* File size, header size */
-    unsigned int depth;
+    unsigned int depth;	/* bits per pixel */
     int i, n, linesize, ret;
     uint8_t *ptr;
     const uint8_t *buf0 = buf;
@@ -76,7 +76,8 @@ static int xkcd_decode_frame(AVCodecContext *avctx,
 	/* Bits per pixel */
 	depth = bytestream_get_le16(&buf);
 
-	avctx->pix_fmt = AV_PIX_FMT_PAL8;
+	/* Set the color format */
+	avctx->pix_fmt = AV_PIX_FMT_RGB8;
     
 	if ((ret = ff_get_buffer(avctx, p, 0)) < 0)
         return ret;
@@ -86,28 +87,15 @@ static int xkcd_decode_frame(AVCodecContext *avctx,
 
     buf   = buf0 + hsize; /* Point buf at the start of the pixel array */
 
-    /* Line size in file multiple of 4 (without padding)*/
+    /* Line size in file multiple of 4 */
     n = ((avctx->width * depth + 31) / 8) & ~3;
-
-    // RLE may skip decoding some picture areas, so blank picture before decoding
-	memset(p->data[0], 0, avctx->height * p->linesize[0]);
 
 	/* Set the pointer to the top left part of the image */
 	ptr      = p->data[0];	/* Actual pointer to the image data */
 	linesize = p->linesize[0];
 
-	/* Stores how many colors there are, determined by the number of bits per pixel.
-	   For example, 8 bits = 256 colors, 4 bits = 16 colors*/
-	/*int colors = 1 << depth; */
-
-	/* Null out the buffer to hold the image */
-	memset(p->data[1], 0, 1024);
-
-
-	av_log(avctx, AV_LOG_ERROR, "Got here linesize=%d\n", linesize);
 	/* Decode the actual image */
 	for (i = 0; i < avctx->height; i++) {
-		/* Segfault on the 3rd iteration of the loop, loop should proceed through 233 iterations */	
 		memcpy(ptr, buf, n);
 		buf += n;
 		ptr += linesize;

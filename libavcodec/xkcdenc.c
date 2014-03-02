@@ -27,10 +27,6 @@
 #include "xkcd.h"
 #include "internal.h"
 
-static const uint32_t monoblack_pal[] = { 0x000000, 0xFFFFFF };
-static const uint32_t rgb565_masks[]  = { 0xF800, 0x07E0, 0x001F };
-static const uint32_t rgb444_masks[]  = { 0x0F00, 0x00F0, 0x000F };
-
 static av_cold int xkcd_encode_init(AVCodecContext *avctx){
     switch (avctx->pix_fmt) {
     case AV_PIX_FMT_RGB8:
@@ -56,11 +52,8 @@ static int xkcd_encode_frame(AVCodecContext *avctx, AVPacket *pkt,
 	/* hsize = header size */
     int n_bytes_image, n_bytes_per_row, n_bytes, i, hsize, ret;
 
-    const uint32_t *pal = NULL;	/* pallete entries */
-    uint32_t palette256[256];
-
 	/* pad_bytes_per_row = bytes of null to fill in at the end of a row of image data */
-    int pad_bytes_per_row, pal_entries = 0;
+    int pad_bytes_per_row = 0;
 
 	/* Number of bits per pixel */
     int bit_count = avctx->bits_per_coded_sample;
@@ -70,14 +63,6 @@ static int xkcd_encode_frame(AVCodecContext *avctx, AVPacket *pkt,
 
     avctx->coded_frame->pict_type = AV_PICTURE_TYPE_I;
     avctx->coded_frame->key_frame = 1;
-    switch (avctx->pix_fmt) {
-    case AV_PIX_FMT_RGB8:
-        av_assert1(bit_count == 8);
-        avpriv_set_systematic_pal2(palette256, avctx->pix_fmt);
-        pal = palette256;
-        break;
-    }
-    if (pal && !pal_entries) pal_entries = 1 << bit_count;
 
 	/* Number of bytes of image data in a row */
 	/* (width in pixels * bits per pixel) / 8 to put it in bytes.
@@ -162,7 +147,7 @@ AVCodec ff_xkcd_encoder = {
     .close          = xkcd_encode_close,
     .pix_fmts       = (const enum AVPixelFormat[]){
         AV_PIX_FMT_RGB8,
-        AV_PIX_FMT_NONE
+		AV_PIX_FMT_NONE
     },
 };
 
