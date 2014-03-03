@@ -56,7 +56,7 @@ static int xkcd_decode_frame(AVCodecContext *avctx,
                buf_size, filesize);
         filesize = buf_size;
     }
-
+	/* Set header size to include the number of bytes our header will use */
     headersize  = 14;
 
 	/* Check to make sure the file size is larger than the header size */
