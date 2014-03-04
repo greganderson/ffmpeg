@@ -26,6 +26,8 @@
 #include "bytestream.h"
 #include "internal.h"
 
+/* TODO: Add support for compression/decompression */
+
 static av_cold int xkcd_encode_init(AVCodecContext *avctx){
     switch (avctx->pix_fmt) {
     case AV_PIX_FMT_RGB8:
