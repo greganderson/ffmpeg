@@ -36,7 +36,7 @@ static int xkcd_decode_frame(AVCodecContext *avctx,
     AVFrame *picture   = data;
     unsigned int filesize, headersize; /* File size, header size */
     unsigned int depth;	/* bits per pixel */
-    int i, j, n, linesize, ret, compressed, r, g, b;
+    int i, n, linesize, ret, compressed, r, g, b;
 
 	int red[1 << 3], green[1 << 3], blue[1 << 2];
 
@@ -132,24 +132,6 @@ static int xkcd_decode_frame(AVCodecContext *avctx,
 
     *got_frame = 1;
     return buf_size;
-}
-
-/* Returns the entry in the specific color table */
-int getEntry(int table[], int color, int bits) {
-	int x;
-	for(x = 0; x < (1 << bits) - 1; x++){
-		if ( color <= table[x])
-			return x;
-	}
-	return x;
-}
-
-/* Generates a table of colors with then number of available bits supplied */
-void generateColors(int arr[], int bits) {
-	int val, x;
-	val = 255 / ((1 << bits)-1);
-	for (x = 0; x < (1 << bits); x++)
-		arr[x] = val * x;
 }
 
 AVCodec ff_xkcd_decoder = {
