@@ -67,7 +67,7 @@ static int xkcd_encode_frame(AVCodecContext *avctx, AVPacket *pkt,
 	/* buffer_data = data to be buffered, buf = buffer to write to */
     uint8_t *buffer_data, *buffer, *buffer_start;
 
-	int compression, r, g, b, rbits, gbits, bbits = 0;
+	int compression, r, g, b, rbits, gbits, bbits, sum = 0;
 
 	/* Color tables: color[2**NumBitsForColor]*/
 	int red[1 << 3];
@@ -103,7 +103,11 @@ static int xkcd_encode_frame(AVCodecContext *avctx, AVPacket *pkt,
 	header_size = 16;
 
 	/* Number of bytes in the entire file */
-    total_bytes = bytes_in_image + header_size;
+	if (avctx->bits_per_coded_sample == 24)
+		total_bytes = (bytes_in_image / 3) + header_size;
+	else
+		total_bytes = bytes_in_image + header_size;
+		
 
     if ((ret = ff_alloc_packet2(avctx, pkt, total_bytes)) < 0)
         return ret;
@@ -138,8 +142,10 @@ static int xkcd_encode_frame(AVCodecContext *avctx, AVPacket *pkt,
 				g = getEntry(green, buffer_data[j+1], gbits);
 				b = getEntry(blue, buffer_data[j+2], bbits);
 
+				sum = (r << (8-rbits)) + (g << (8-rbits-gbits)) + (b << (8-rbits-gbits-bbits));
+
 				/* Store the sum */
-				bytestream_put_byte(&buffer, r+g+b);
+				bytestream_put_byte(&buffer, sum);
 			}
 			/* Null out the array which creates padding */
 			memset(buffer, 0, pad_bytes_per_row);

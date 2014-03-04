@@ -36,7 +36,7 @@ static int xkcd_decode_frame(AVCodecContext *avctx,
     AVFrame *picture   = data;
     unsigned int filesize, headersize; /* File size, header size */
     unsigned int depth;	/* bits per pixel */
-    int i, n, linesize, ret, compressed, r, g, b;
+    int i, n, linesize, ret, compressed, r, g, b, redValue, greenValue, blueValue;
 
 	int red[1 << 3], green[1 << 3], blue[1 << 2];
 
@@ -116,10 +116,23 @@ static int xkcd_decode_frame(AVCodecContext *avctx,
 		generateColors(red, r);
 		generateColors(green, g);
 		generateColors(blue, b);
+		
 
+		av_log(avctx, AV_LOG_ERROR, "GOT HERE buf[0]=%d", buf[0]);
+		for (i = 0; i < filesize-headersize; i++) {
+			redValue = (buf[i] >> (8-r)) & 7;
+			greenValue = (buf[i] >> (8-r-g)) & 7;
+			blueValue = (buf[i] >> (8-r-g-b)) & 3;
 
-		for(i = 0; i  < sizeof(picture->data); i++){
+			redValue = red[redValue];
+			greenValue = green[greenValue];
+			blueValue = blue[blueValue];
+
+			bytestream_put_byte(&ptr, redValue);
+			bytestream_put_byte(&ptr, greenValue);
+			bytestream_put_byte(&ptr, blueValue);
 		}
+		
 	}
 	else {
 		/* Decode the actual image */
