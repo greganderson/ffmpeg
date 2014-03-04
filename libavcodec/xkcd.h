@@ -23,6 +23,8 @@
 #define AVCODEC_XKCD_H
 
 #include "avcodec.h"
+int getEntry(int table[], int color);
+void generateColors(int arr[], int bits);
 
 typedef enum {
     XKCD_RGB         =0,
@@ -30,5 +32,21 @@ typedef enum {
     XKCD_RLE4        =2,
     XKCD_BITFIELDS   =3,
 } BiCompression;
+
+/* Returns the entry in the specific color table */
+int getEntry(int table[], int color) {
+	int i = 0;
+	while (color > table[i])
+		i++;
+	return i;
+}
+
+/* Generates a table of colors with then number of available bits supplied */
+void generateColors(int arr[], int bits) {
+	int val, i;
+	val = 255 / ((1 << bits)-1);
+	for (i = 0; i < (1 << bits); i++)
+		arr[i] = val * i;
+}
 
 #endif /* AVCODEC_XKCD_H */
