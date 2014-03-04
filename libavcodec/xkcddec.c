@@ -23,6 +23,8 @@
 #include "bytestream.h"
 #include "internal.h"
 
+/* TODO: Add compression and decompression */
+
 static int xkcd_decode_frame(AVCodecContext *avctx,
                             void *data, int *got_frame,
                             AVPacket *avpkt)
