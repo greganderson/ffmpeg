@@ -67,10 +67,15 @@ static int xkcd_encode_frame(AVCodecContext *avctx, AVPacket *pkt,
 	/* buffer_data = data to be buffered, buf = buffer to write to */
     uint8_t *buffer_data, *buffer, *buffer_start;
 
-	int compression, r, g, b = 0;
+	int compression, r, g, b, rbits, gbits, bbits = 0;
 
 	/* Color tables: color[2**NumBitsForColor]*/
-	int red[1 << 3], green[1 << 3], blue[1 << 2];
+	int red[1 << 3];
+	int green[1 << 3];
+	int blue[1 << 2];
+	rbits = 3;
+	gbits = 3;
+	bbits = 2;
 
 	if (avctx->bits_per_coded_sample == 24)
 		compression = XKCD_RGB24;
@@ -121,17 +126,17 @@ static int xkcd_encode_frame(AVCodecContext *avctx, AVPacket *pkt,
 
 	if (compression == XKCD_RGB24) {
 		/* Generate the color tables */
-		generateColors(red, 3);
-		generateColors(green, 3);
-		generateColors(blue, 2);
+		generateColors(red, rbits);
+		generateColors(green, gbits);
+		generateColors(blue, bbits);
 
 		for (i = 0; i < avctx->height; i++) {
 			/* Loop through row of pixels, moving 3 bytes at a time (24 bit color) */
 			for (j = 0; j < bytes_per_row; j+=3) {
 				/* Get rgb values */
-				r = getEntry(red, buffer_data[j+0], 3);
-				g = getEntry(green, buffer_data[j+1], 3);
-				b = getEntry(blue, buffer_data[j+2], 2);
+				r = getEntry(red, buffer_data[j+0], rbits);
+				g = getEntry(green, buffer_data[j+1], gbits);
+				b = getEntry(blue, buffer_data[j+2], bbits);
 
 				/* Store the sum */
 				bytestream_put_byte(&buffer, r+g+b);
