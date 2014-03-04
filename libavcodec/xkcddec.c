@@ -86,18 +86,6 @@ static int xkcd_decode_frame(AVCodecContext *avctx,
 	if(compressed == XKCD_RGB24){
 		/* Set the color format */
 		avctx->pix_fmt = AV_PIX_FMT_RGB24;
-
-		r = 3;
-		g = 3;
-		b = 2;
-
-		generateColors(red, r);
-		generateColors(green, g);
-		generateColors(blue, b);
-
-
-		for(i = 0; i  < sizeof(picture->data); i++){
-		}
 	}
 	else {
 		/* Set the color format */
@@ -120,7 +108,18 @@ static int xkcd_decode_frame(AVCodecContext *avctx,
 	linesize = picture->linesize[0];	/* Size of the line in bytes */
 
 	if(compressed == XKCD_RGB24){
-		
+		/* Initialize rgb */
+		r = 3;
+		g = 3;
+		b = 2;
+
+		generateColors(red, r);
+		generateColors(green, g);
+		generateColors(blue, b);
+
+
+		for(i = 0; i  < sizeof(picture->data); i++){
+		}
 	}
 	else {
 		/* Decode the actual image */
