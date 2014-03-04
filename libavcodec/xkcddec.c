@@ -118,8 +118,8 @@ static int xkcd_decode_frame(AVCodecContext *avctx,
 		generateColors(blue, b);
 		
 
-		av_log(avctx, AV_LOG_ERROR, "GOT HERE buf[0]=%d", buf[0]);
-		for (i = 0; i < filesize-headersize; i++) {
+		//for (i = 0; i < filesize-headersize; i++) {
+		for (i = 0; i < 420; i++) {
 			redValue = (buf[i] >> (8-r)) & 7;
 			greenValue = (buf[i] >> (8-r-g)) & 7;
 			blueValue = (buf[i] >> (8-r-g-b)) & 3;
@@ -132,6 +132,7 @@ static int xkcd_decode_frame(AVCodecContext *avctx,
 			bytestream_put_byte(&ptr, greenValue);
 			bytestream_put_byte(&ptr, blueValue);
 		}
+		av_log(avctx, AV_LOG_ERROR, "GOT HERE n=%d", n);
 		
 	}
 	else {

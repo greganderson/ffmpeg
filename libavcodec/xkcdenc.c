@@ -155,6 +155,7 @@ static int xkcd_encode_frame(AVCodecContext *avctx, AVPacket *pkt,
 
 			/* Now point to next row */
 			buffer_data += picture->linesize[0];
+			//buffer_data += bytes_per_row;
 		}
 
 		/* Set the filesize */
