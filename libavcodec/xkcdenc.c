@@ -27,7 +27,8 @@
 #include "internal.h"
 #include "xkcd.h"
 
-/* TODO: Add support for compression/decompression */
+int getEntry(int[], int, int);
+void generateColors(int[], int);
 
 static av_cold int xkcd_encode_init(AVCodecContext *avctx){
     switch (avctx->pix_fmt) {
@@ -55,7 +56,7 @@ static int xkcd_encode_frame(AVCodecContext *avctx, AVPacket *pkt,
     const AVFrame * const picture = pict;	/* Actual image data */
 
 	/* header_size = header size */
-    int bytes_in_image, bytes_per_row, total_bytes, i, header_size, ret;
+    int i, j, bytes_in_image, bytes_per_row, total_bytes, header_size, ret;
 
 	/* pad_bytes_per_row = bytes of null to fill in at the end of a row of image data */
     int pad_bytes_per_row = 0;
@@ -64,9 +65,12 @@ static int xkcd_encode_frame(AVCodecContext *avctx, AVPacket *pkt,
     int bit_count = avctx->bits_per_coded_sample;
 
 	/* buffer_data = data to be buffered, buf = buffer to write to */
-    uint8_t *buffer_data, *buffer;
+    uint8_t *buffer_data, *buffer, *buffer_start;
 
-	int compression;
+	int compression, r, g, b = 0;
+
+	/* Color tables: color[2**NumBitsForColor]*/
+	int red[1 << 3], green[1 << 3], blue[1 << 2];
 
 	if (avctx->bits_per_coded_sample == 24)
 		compression = XKCD_RGB24;
@@ -98,7 +102,8 @@ static int xkcd_encode_frame(AVCodecContext *avctx, AVPacket *pkt,
 
     if ((ret = ff_alloc_packet2(avctx, pkt, total_bytes)) < 0)
         return ret;
-    buffer = pkt->data;
+
+    buffer_start = buffer = pkt->data;
 
 	/* Start building the header */
     bytestream_put_byte(&buffer, 'X');                   // Filetype
@@ -111,27 +116,58 @@ static int xkcd_encode_frame(AVCodecContext *avctx, AVPacket *pkt,
     bytestream_put_le16(&buffer, bit_count);             // Bits per pixel
     bytestream_put_le16(&buffer, compression);           // Compression type
 
-
-    // XKCD files are bottom-to-top so we start from the end...
+    // Start buffer at the correct position in memory
     buffer_data = picture->data[0];
 
-	/* Write the image */
-    for(i = 0; i < avctx->height; i++) {
-		/* Write line to buffer */
-		memcpy(buffer, buffer_data, bytes_per_row);
+	if (compression == XKCD_RGB24) {
+		/* Generate the color tables */
+		generateColors(red, 3);
+		generateColors(green, 3);
+		generateColors(blue, 2);
 
-		/* Point buffer to the end of the data and start of the padding */
-        buffer += bytes_per_row;
+		for (i = 0; i < avctx->height; i++) {
+			/* Loop through row of pixels, moving 3 bytes at a time (24 bit color) */
+			for (j = 0; j < bytes_per_row; j+=3) {
+				/* Get rgb values */
+				r = getEntry(red, buffer_data[j+0], 3);
+				g = getEntry(green, buffer_data[j+1], 3);
+				b = getEntry(blue, buffer_data[j+2], 2);
 
-		/* Null out the array which creates padding */
-        memset(buffer, 0, pad_bytes_per_row);
+				/* Store the sum */
+				bytestream_put_byte(&buffer, r+g+b);
+			}
+			/* Null out the array which creates padding */
+			memset(buffer, 0, pad_bytes_per_row);
 
-		/* Point buffer to the end of the padding and start of the new data */
-        buffer += pad_bytes_per_row;
+			/* Point buffer to the end of the padding and start of the new data */
+			buffer += pad_bytes_per_row;
 
-		/* Now point to next row */
-        buffer_data += picture->linesize[0];
-    }
+			/* Now point to next row */
+			buffer_data += picture->linesize[0];
+		}
+
+		/* Set the filesize */
+		pkt->size = buffer - buffer_start;
+	}
+	else if (compression == XKCD_RGB8) {
+		/* Write the image */
+		for(i = 0; i < avctx->height; i++) {
+			/* Write line to buffer */
+			memcpy(buffer, buffer_data, bytes_per_row);
+
+			/* Point buffer to the end of the data and start of the padding */
+			buffer += bytes_per_row;
+
+			/* Null out the array which creates padding */
+			memset(buffer, 0, pad_bytes_per_row);
+
+			/* Point buffer to the end of the padding and start of the new data */
+			buffer += pad_bytes_per_row;
+
+			/* Now point to next row */
+			buffer_data += picture->linesize[0];
+		}
+	}
 
     pkt->flags |= AV_PKT_FLAG_KEY;
     *got_packet = 1;
@@ -143,6 +179,24 @@ static av_cold int xkcd_encode_close(AVCodecContext *avctx)
 {
     av_frame_free(&avctx->coded_frame);
     return 0;
+}
+
+/* Returns the entry in the specific color table */
+int getEntry(int table[], int color, int bits) {
+	int i;
+	for (i = 0; i < (1 << bits)-1; i++)
+		if (color <= table[i])
+			return i;
+
+	return i;
+}
+
+/* Generates a table of colors with then number of available bits supplied */
+void generateColors(int arr[], int bits) {
+	int val, i;
+	val = 255 / ((1 << bits)-1);
+	for (i = 0; i < (1 << bits); i++)
+		arr[i] = val * i;
 }
 
 AVCodec ff_xkcd_encoder = {
