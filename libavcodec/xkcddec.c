@@ -22,8 +22,10 @@
 #include "avcodec.h"
 #include "bytestream.h"
 #include "internal.h"
+#include "xkcd.h"
 
-/* TODO: Add compression and decompression */
+int getEntry(int[], int, int);
+void generateColors(int[], int); 
 
 static int xkcd_decode_frame(AVCodecContext *avctx,
                             void *data, int *got_frame,
@@ -34,7 +36,10 @@ static int xkcd_decode_frame(AVCodecContext *avctx,
     AVFrame *picture   = data;
     unsigned int filesize, headersize; /* File size, header size */
     unsigned int depth;	/* bits per pixel */
-    int i, n, linesize, ret;
+    int i, j, n, linesize, ret, compressed, r, g, b;
+
+	int red[1 << 3], green[1 << 3], blue[1 << 2];
+
     uint8_t *ptr;
 
 	/* Check initial header size */
@@ -59,7 +64,7 @@ static int xkcd_decode_frame(AVCodecContext *avctx,
         filesize = buf_size;
     }
 	/* Set header size to include the number of bytes our header will use */
-    headersize  = 14;
+    headersize  = 16;
 
 	/* Check to make sure the file size is larger than the header size */
     if (filesize <= headersize) {
@@ -75,33 +80,77 @@ static int xkcd_decode_frame(AVCodecContext *avctx,
 	/* Bits per pixel */
 	depth = bytestream_get_le16(&buf);
 
-	/* Set the color format */
-	avctx->pix_fmt = AV_PIX_FMT_RGB8;
-    
+	/* A flag for whether the file was compressed or not */
+		compressed = bytestream_get_le16(&buf);   
+	
+	if(compressed == XKCD_RGB24){
+		/* Set the color format */
+		avctx->pix_fmt = AV_PIX_FMT_RGB24;
+
+		r = 3;
+		g = 3;
+		b = 2;
+
+		generateColors(red, r);
+		generateColors(green, g);
+		generateColors(blue, b);
+
+
+		for(i = 0; i  < sizeof(picture->data); i++){
+		}
+	}
+	else {
+		/* Set the color format */
+		avctx->pix_fmt = AV_PIX_FMT_RGB8;
+	}
+
 	if ((ret = ff_get_buffer(avctx, picture, 0)) < 0)
-        return ret;
+		return ret;
 
-    picture->pict_type = AV_PICTURE_TYPE_I;
-    picture->key_frame = 1;
+	picture->pict_type = AV_PICTURE_TYPE_I;
+	picture->key_frame = 1;
 
-    buf += headersize; /* Point buf at the start of the pixel array */
+	buf += headersize; /* Point buf at the start of the pixel array */
 
-    /* Line size in file multiple of 4 */
-    n = ((avctx->width * depth + 31) / 8) & ~3;
+	/* Line size in file multiple of 4 */
+	n = ((avctx->width * depth + 31) / 8) & ~3;
 
 	/* Set the pointer to the top left part of the image */
 	ptr      = picture->data[0];		/* Actual pointer to the image data */
 	linesize = picture->linesize[0];	/* Size of the line in bytes */
 
-	/* Decode the actual image */
-	for (i = 0; i < avctx->height; i++) {
-		memcpy(ptr, buf, n);
-		buf += n;
-		ptr += linesize;
+	if(compressed == XKCD_RGB24){
+		
+	}
+	else {
+		/* Decode the actual image */
+		for (i = 0; i < avctx->height; i++) {
+			memcpy(ptr, buf, n);
+			buf += n;
+			ptr += linesize;
+		}
 	}
 
     *got_frame = 1;
     return buf_size;
+}
+
+/* Returns the entry in the specific color table */
+int getEntry(int table[], int color, int bits) {
+	int x;
+	for(x = 0; x < (1 << bits) - 1; x++){
+		if ( color <= table[x])
+			return x;
+	}
+	return x;
+}
+
+/* Generates a table of colors with then number of available bits supplied */
+void generateColors(int arr[], int bits) {
+	int val, x;
+	val = 255 / ((1 << bits)-1);
+	for (x = 0; x < (1 << bits); x++)
+		arr[x] = val * x;
 }
 
 AVCodec ff_xkcd_decoder = {
