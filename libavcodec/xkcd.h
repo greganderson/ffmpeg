@@ -27,10 +27,8 @@ int getEntry(int table[], int color);
 void generateColors(int arr[], int bits);
 
 typedef enum {
-    XKCD_RGB         =0,
-    XKCD_RLE8        =1,
-    XKCD_RLE4        =2,
-    XKCD_BITFIELDS   =3,
+    XKCD_RGB8  =0,
+    XKCD_RGB24 =1,
 } BiCompression;
 
 /* Returns the entry in the specific color table */

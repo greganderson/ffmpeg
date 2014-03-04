@@ -25,11 +25,15 @@
 #include "avcodec.h"
 #include "bytestream.h"
 #include "internal.h"
+#include "xkcd.h"
 
 /* TODO: Add support for compression/decompression */
 
 static av_cold int xkcd_encode_init(AVCodecContext *avctx){
     switch (avctx->pix_fmt) {
+	case AV_PIX_FMT_RGB24:
+		avctx->bits_per_coded_sample = 24;
+		break;
     case AV_PIX_FMT_RGB8:
         avctx->bits_per_coded_sample = 8;
         break;
@@ -62,6 +66,13 @@ static int xkcd_encode_frame(AVCodecContext *avctx, AVPacket *pkt,
 	/* buffer_data = data to be buffered, buf = buffer to write to */
     uint8_t *buffer_data, *buffer;
 
+	int compression;
+
+	if (avctx->bits_per_coded_sample == 24)
+		compression = XKCD_RGB24;
+	else
+		compression = XKCD_RGB8;
+
     avctx->coded_frame->pict_type = AV_PICTURE_TYPE_I;
     avctx->coded_frame->key_frame = 1;
 
@@ -80,7 +91,7 @@ static int xkcd_encode_frame(AVCodecContext *avctx, AVPacket *pkt,
 	/* Total bytes in image */
     bytes_in_image = avctx->height * (bytes_per_row + pad_bytes_per_row);
 
-    header_size = 14;
+	header_size = 16;
 
 	/* Number of bytes in the entire file */
     total_bytes = bytes_in_image + header_size;
@@ -94,10 +105,11 @@ static int xkcd_encode_frame(AVCodecContext *avctx, AVPacket *pkt,
     bytestream_put_byte(&buffer, 'K');                   // Filetype
     bytestream_put_byte(&buffer, 'C');                   // Filetype
     bytestream_put_byte(&buffer, 'D');                   // Filetype
-    bytestream_put_le32(&buffer, total_bytes);               // Size of entire file
+    bytestream_put_le32(&buffer, total_bytes);           // Size of entire file
     bytestream_put_le16(&buffer, avctx->width);          // Width of image in pixels
     bytestream_put_le16(&buffer, avctx->height);         // Height of image in pixels
     bytestream_put_le16(&buffer, bit_count);             // Bits per pixel
+    bytestream_put_le16(&buffer, compression);           // Compression type
 
 
     // XKCD files are bottom-to-top so we start from the end...
@@ -142,7 +154,7 @@ AVCodec ff_xkcd_encoder = {
     .encode2        = xkcd_encode_frame,
     .close          = xkcd_encode_close,
     .pix_fmts       = (const enum AVPixelFormat[]){
-        AV_PIX_FMT_RGB8,
+        AV_PIX_FMT_RGB8, AV_PIX_FMT_RGB24,
 		AV_PIX_FMT_NONE
     },
 };
