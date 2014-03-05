@@ -60,6 +60,7 @@ static int xkcd_encode_frame(AVCodecContext *avctx, AVPacket *pkt,
 	/* buffer_data = data to be buffered, buf = buffer to write to */
     uint8_t *buffer_data, *buffer;
 
+	/* Cite: BMP encoder */
     avctx->coded_frame->pict_type = AV_PICTURE_TYPE_I;
     avctx->coded_frame->key_frame = 1;
 
@@ -68,7 +69,9 @@ static int xkcd_encode_frame(AVCodecContext *avctx, AVPacket *pkt,
 	Add 7 bits to the width in bits to make sure to have enough
 	bytes of storage when we divide (making sure when it truncates
 	in division, it doesn't get rid of what we need) */
+	/* Cite: BMP encoder */
     bytes_per_row = ((int64_t)avctx->width * (int64_t)bit_count + 7LL) >> 3LL;
+	/* End cite */
 
 	/* Bytes at the end of a row that are 'crossed out' */
 	/* Take the remainder from the above bytes and fill in with
@@ -83,25 +86,28 @@ static int xkcd_encode_frame(AVCodecContext *avctx, AVPacket *pkt,
 	/* Number of bytes in the entire file */
     total_bytes = bytes_in_image + header_size;
 
+	/* Cite: BMP encoder */
     if ((ret = ff_alloc_packet2(avctx, pkt, total_bytes)) < 0)
         return ret;
     buffer = pkt->data;
+	/* End cite */
 
 	/* Start building the header */
     bytestream_put_byte(&buffer, 'X');                   // Filetype
     bytestream_put_byte(&buffer, 'K');                   // Filetype
     bytestream_put_byte(&buffer, 'C');                   // Filetype
     bytestream_put_byte(&buffer, 'D');                   // Filetype
-    bytestream_put_le32(&buffer, total_bytes);               // Size of entire file
+    bytestream_put_le32(&buffer, total_bytes);           // Size of entire file
     bytestream_put_le16(&buffer, avctx->width);          // Width of image in pixels
     bytestream_put_le16(&buffer, avctx->height);         // Height of image in pixels
     bytestream_put_le16(&buffer, bit_count);             // Bits per pixel
 
 
-    // XKCD files are bottom-to-top so we start from the end...
+    // Start the buffer
     buffer_data = picture->data[0];
 
 	/* Write the image */
+	/* Cite: BMP encoder */
     for(i = 0; i < avctx->height; i++) {
 		/* Write line to buffer */
 		memcpy(buffer, buffer_data, bytes_per_row);
@@ -121,6 +127,7 @@ static int xkcd_encode_frame(AVCodecContext *avctx, AVPacket *pkt,
 
     pkt->flags |= AV_PKT_FLAG_KEY;
     *got_packet = 1;
+	/* End cite */
 
     return 0;
 }

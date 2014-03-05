@@ -23,8 +23,6 @@
 #include "bytestream.h"
 #include "internal.h"
 
-/* TODO: Add compression and decompression */
-
 static int xkcd_decode_frame(AVCodecContext *avctx,
                             void *data, int *got_frame,
                             AVPacket *avpkt)
@@ -54,8 +52,6 @@ static int xkcd_decode_frame(AVCodecContext *avctx,
 	/* Check file size */
     filesize = bytestream_get_le32(&buf);
     if (buf_size < filesize) {
-        av_log(avctx, AV_LOG_ERROR, "not enough data (%d < %d), trying to decode anyway\n",
-               buf_size, filesize);
         filesize = buf_size;
     }
 	/* Set header size to include the number of bytes our header will use */
@@ -78,16 +74,20 @@ static int xkcd_decode_frame(AVCodecContext *avctx,
 	/* Set the color format */
 	avctx->pix_fmt = AV_PIX_FMT_RGB8;
     
+	/* Cite: BMP decoder */
 	if ((ret = ff_get_buffer(avctx, picture, 0)) < 0)
         return ret;
 
     picture->pict_type = AV_PICTURE_TYPE_I;
     picture->key_frame = 1;
+	/* End cite */
 
     buf += headersize; /* Point buf at the start of the pixel array */
 
     /* Line size in file multiple of 4 */
+	/* Cite: BMP decoder */
     n = ((avctx->width * depth + 31) / 8) & ~3;
+	/* End cite */
 
 	/* Set the pointer to the top left part of the image */
 	ptr      = picture->data[0];		/* Actual pointer to the image data */
